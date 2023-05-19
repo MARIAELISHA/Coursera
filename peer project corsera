@@ -1,0 +1,84 @@
+To solve this prediction assignment using R, follow the steps outlined below:
+
+Step 1: Data Preparation
+```R
+# Load necessary packages
+library(caret)
+
+# Download and load the training data
+train_url <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+training <- read.csv(url(train_url))
+
+# Download and load the test data
+test_url <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+testing <- read.csv(url(test_url))
+```
+
+Step 2: Exploratory Data Analysis (EDA)
+```R
+# Explore the structure and summary statistics of the training data
+str(training)
+summary(training)
+```
+
+Step 3: Data Cleaning and Preprocessing
+```R
+# Remove unnecessary variables/columns
+cols_to_remove <- c("X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", 
+                    "cvtd_timestamp", "new_window", "num_window")
+training_clean <- training[, !names(training) %in% cols_to_remove]
+
+# Remove near-zero variance predictors
+nzv_cols <- nearZeroVar(training_clean, saveMetrics = TRUE)
+training_clean <- training_clean[, !nzv_cols$nzv]
+
+# Handle missing values
+training_clean <- training_clean[, colSums(is.na(training_clean)) == 0]
+
+# Perform feature scaling/normalization
+preProc <- preProcess(training_clean[, -ncol(training_clean)], method = c("center", "scale"))
+training_scaled <- predict(preProc, training_clean[, -ncol(training_clean)])
+```
+
+Step 4: Model Building and Evaluation
+```R
+# Set seed for reproducibility
+set.seed(123)
+
+# Split the training data into training and validation sets
+inTrain <- createDataPartition(training_clean$classe, p = 0.7, list = FALSE)
+train_data <- training_scaled[inTrain, ]
+valid_data <- training_scaled[-inTrain, ]
+
+# Train a model using an appropriate algorithm (e.g., random forest)
+model <- train(classe ~ ., data = train_data, method = "rf")
+
+# Evaluate the model on the validation set
+predictions <- predict(model, newdata = valid_data)
+confusionMatrix(predictions, valid_data$classe)
+```
+
+Step 5: Final Model Training and Testing
+```R
+# Train the final model on the entire training dataset
+final_model <- train(classe ~ ., data = training_scaled, method = "rf")
+
+# Prepare the test data for prediction
+testing_clean <- testing[, !names(testing) %in% cols_to_remove]
+testing_clean <- testing_clean[, !nzv_cols$nzv]
+testing_scaled <- predict(preProc, testing_clean[, -ncol(testing_clean)])
+
+# Make predictions on the test data using the final model
+test_predictions <- predict(final_model, newdata = testing_scaled)
+test_predictions
+```
+
+#Step 6: Report and Submission
+- Create an R Markdown document to describe the steps performed, the model building process, and the evaluation results.
+- Include explanations of the choices made during data preprocessing, model selection, and evaluation.
+- Compile the R Markdown document into an HTML report.
+- Upload the report to a GitHub repository, preferably in a branch named "gh-pages," so that the HTML page can be viewed online.
+- Submit the link to the GitHub repository for peer review.
+- Finally, use the trained model to predict the outcomes for the 20 test cases provided in the test data and submit your predictions to the Course Project Prediction Quiz.
+
+Make sure to include appropriate sections, such as Introduction, Data Preparation, EDA, Data Cleaning and Preprocessing, Model Building and Evaluation
